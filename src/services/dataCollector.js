@@ -143,28 +143,26 @@ class DataCollector {
         // --- FALLBACK SAFETY NET (For Cloud Deployments) ---
         if (coins.length === 0) {
             console.warn("⚠️ CoinGecko blocked us (0 coins fetched). Using EMERGENCY FALLBACK list.");
-            const fallbackSymbols = [
-                'bitcoin', 'ethereum', 'binancecoin', 'solana', 'ripple',
-                'cardano', 'dogecoin', 'avalanche-2', 'shiba-inu', 'polkadot',
-                'chainlink', 'tron', 'matic-network', 'litecoin', 'near',
-                'uniswap', 'internet-computer', 'stellar', 'monero', 'cosmos',
-                'pepe', 'aptos', 'filecoin', 'render-token', 'hedera-hashgraph'
-            ];
+            const fallbackMap = {
+                'bitcoin': 'btc', 'ethereum': 'eth', 'binancecoin': 'bnb', 'solana': 'sol', 'ripple': 'xrp',
+                'cardano': 'ada', 'dogecoin': 'doge', 'avalanche-2': 'avax', 'shiba-inu': 'shib', 'polkadot': 'dot',
+                'chainlink': 'link', 'tron': 'trx', 'matic-network': 'matic', 'litecoin': 'ltc', 'near': 'near',
+                'uniswap': 'uni', 'internet-computer': 'icp', 'stellar': 'xlm', 'monero': 'xmr', 'cosmos': 'atom',
+                'pepe': 'pepe', 'aptos': 'apt', 'filecoin': 'fil', 'render-token': 'rndr', 'hedera-hashgraph': 'hbar'
+            };
+
+            const fallbackIds = Object.keys(fallbackMap);
 
             // Create fake coin objects for the fallback list
-            for (let i = 0; i < fallbackSymbols.length; i++) {
+            for (let i = 0; i < fallbackIds.length; i++) {
+                const id = fallbackIds[i];
                 coins.push({
-                    id: fallbackSymbols[i],
-                    symbol: fallbackSymbols[i] === 'binancecoin' ? 'bnb' :
-                        fallbackSymbols[i] === 'ripple' ? 'xrp' :
-                            fallbackSymbols[i] === 'pepe' ? 'pepe' :
-                                fallbackSymbols[i] === 'matic-network' ? 'matic' :
-                                    fallbackSymbols[i] === 'avalanche-2' ? 'avax' :
-                                        fallbackSymbols[i].substring(0, 4),
-                    name: fallbackSymbols[i],
+                    id: id,
+                    symbol: fallbackMap[id], // Correct symbol (e.g. 'eth')
+                    name: id,
                     market_cap_rank: i + 1,
                     current_price: 0,
-                    total_volume: 100_000_000_000, // Fake volume to pass minimum volume filter
+                    total_volume: 100_000_000_000,
                     price_change_percentage_24h: 0
                 });
             }

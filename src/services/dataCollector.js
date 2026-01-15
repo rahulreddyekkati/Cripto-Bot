@@ -140,6 +140,38 @@ class DataCollector {
             }
         }
 
+        // --- FALLBACK SAFETY NET (For Cloud Deployments) ---
+        if (coins.length === 0) {
+            console.warn("⚠️ CoinGecko blocked us (0 coins fetched). Using EMERGENCY FALLBACK list.");
+            const fallbackSymbols = [
+                'bitcoin', 'ethereum', 'binancecoin', 'solana', 'ripple',
+                'cardano', 'dogecoin', 'avalanche-2', 'shiba-inu', 'polkadot',
+                'chainlink', 'tron', 'matic-network', 'litecoin', 'near',
+                'uniswap', 'internet-computer', 'stellar', 'monero', 'cosmos',
+                'pepe', 'aptos', 'filecoin', 'render-token', 'hedera-hashgraph'
+            ];
+
+            // Create fake coin objects for the fallback list
+            for (let i = 0; i < fallbackSymbols.length; i++) {
+                coins.push({
+                    id: fallbackSymbols[i],
+                    symbol: fallbackSymbols[i] === 'binancecoin' ? 'bnb' :
+                        fallbackSymbols[i] === 'ripple' ? 'xrp' :
+                            fallbackSymbols[i] === 'pepe' ? 'pepe' :
+                                fallbackSymbols[i] === 'matic-network' ? 'matic' :
+                                    fallbackSymbols[i] === 'avalanche-2' ? 'avax' :
+                                        fallbackSymbols[i].substring(0, 4),
+                    name: fallbackSymbols[i],
+                    market_cap_rank: i + 1,
+                    current_price: 0,
+                    total_volume: 0,
+                    price_change_percentage_24h: 0
+                });
+            }
+            console.log(`✅ Loaded ${coins.length} fallback coins.`);
+        }
+        // ---------------------------------------------------
+
         // === STRONG FILTERING ===
         const filtered = coins.filter(c => {
             const sym = (c.symbol || '').toLowerCase();

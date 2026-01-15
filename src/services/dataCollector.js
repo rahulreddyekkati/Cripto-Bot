@@ -146,9 +146,9 @@ class DataCollector {
             const fallbackMap = {
                 'bitcoin': 'btc', 'ethereum': 'eth', 'binancecoin': 'bnb', 'solana': 'sol', 'ripple': 'xrp',
                 'cardano': 'ada', 'dogecoin': 'doge', 'avalanche-2': 'avax', 'shiba-inu': 'shib', 'polkadot': 'dot',
-                'chainlink': 'link', 'tron': 'trx', 'matic-network': 'matic', 'litecoin': 'ltc', 'near': 'near',
+                'chainlink': 'link', 'tron': 'trx', 'matic-network': 'pol', 'litecoin': 'ltc', 'near': 'near',
                 'uniswap': 'uni', 'internet-computer': 'icp', 'stellar': 'xlm', 'monero': 'xmr', 'cosmos': 'atom',
-                'pepe': 'pepe', 'aptos': 'apt', 'filecoin': 'fil', 'render-token': 'rndr', 'hedera-hashgraph': 'hbar'
+                'pepe': 'pepe', 'aptos': 'apt', 'filecoin': 'fil', 'render-token': 'render', 'hedera-hashgraph': 'hbar'
             };
 
             const fallbackIds = Object.keys(fallbackMap);

@@ -1,0 +1,25 @@
+{
+    "name": "crypto-prediction-system",
+    "version": "1.0.0",
+    "description": "ML-powered crypto prediction with calibrated probabilities",
+    "main": "src/server.js",
+    "scripts": {
+        "dev": "nodemon src/server.js",
+        "start": "NODE_ENV=production node src/server.js",
+        "test": "jest",
+        "backtest": "node src/services/backtester.js"
+    },
+    "dependencies": {
+        "express": "^4.18.2",
+        "cors": "^2.8.5",
+        "axios": "^1.6.2",
+        "sql.js": "^1.8.0",
+        "node-cron": "^3.0.3",
+        "technicalindicators": "^3.1.0",
+        "dotenv": "^16.3.1"
+    },
+    "devDependencies": {
+        "jest": "^29.7.0",
+        "nodemon": "^3.0.2"
+    }
+}

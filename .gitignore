@@ -1,0 +1,22 @@
+node_modules/
+.env
+data/*.db
+src/ml/__pycache__/
+src/ml/*.pkl
+src/ml/*.joblib
+.DS_Store
+
+# Frontend
+frontend/.next/
+frontend/out/
+frontend/node_modules/
+frontend/.DS_Store
+.next/
+out/
+build/
+dist/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

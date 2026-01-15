@@ -1,0 +1,3 @@
+Day,Date,Time,Action,Symbol,Entry Price,Amount ($),Coins Bought,Signal,Sentiment,Probability,Exit Price,Exit Time,Profit/Loss ($),Profit/Loss (%),Portfolio Value,Status
+1,2026-01-15,14:03:45,BUY,CHZ,0.059404,1.50,25.25082486,BUY,slightly_bullish,85%,,,,,100.00,OPEN
+1,2026-01-15,14:03:45,BUY,ZEN,12.470000,1.50,0.12028869,BUY,slightly_bullish,71%,,,,,100.00,OPEN

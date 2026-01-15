@@ -1,0 +1,37 @@
+{
+  "startingBalance": 100,
+  "currentCash": 97,
+  "positions": [
+    {
+      "symbol": "CHZ",
+      "coinId": "chiliz",
+      "entryPrice": 0.059404,
+      "coinsBought": 25.25082486027877,
+      "amount": 1.5,
+      "entryDate": "2026-01-15",
+      "entryTime": "14:03:45",
+      "signal": "BUY",
+      "sentiment": "slightly_bullish",
+      "probability": 0.85,
+      "stopLoss": 0.05727265314469149,
+      "takeProfit": 0.062245795807078015
+    },
+    {
+      "symbol": "ZEN",
+      "coinId": "zencash",
+      "entryPrice": 12.47,
+      "coinsBought": 0.12028869286287089,
+      "amount": 1.5,
+      "entryDate": "2026-01-15",
+      "entryTime": "14:03:45",
+      "signal": "BUY",
+      "sentiment": "slightly_bullish",
+      "probability": 0.7125,
+      "stopLoss": 11.676190532019728,
+      "takeProfit": 13.528412623973699
+    }
+  ],
+  "totalValue": 99.93893534098697,
+  "startDate": "2026-01-15",
+  "dayNumber": 1
+}

@@ -343,9 +343,9 @@ cron.schedule('0 * * * *', async () => {
     }
 });
 
-// Execute daily trades at 8 AM (autonomous mode)
-cron.schedule('0 8 * * *', async () => {
-    console.log('\n[CRON] 🤖 AUTONOMOUS: Executing daily trade (Alpaca)...');
+// Execute trades every hour (Looking for opportunities 24/7)
+cron.schedule('0 * * * *', async () => {
+    console.log('\n[CRON] 🤖 AUTONOMOUS: Checking for actionable trade signals...');
     try {
         const result = await alpacaTrader.executeDailyTrade();
         console.log('[CRON] Daily trade result:', result);

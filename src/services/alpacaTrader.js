@@ -1,4 +1,5 @@
 const alpacaService = require('./alpacaService');
+const notificationService = require('./notificationService');
 const { prepare } = require('../db/database');
 
 /**
@@ -86,6 +87,16 @@ class AlpacaTrader {
             if (order) {
                 executed.push({ symbol, qty, price: safeAmount });
                 console.log(`✅ Order Filled: ${order.id}`);
+
+                // Get updated balance for notification
+                const newAccount = await alpacaService.getAccount();
+                await notificationService.sendTradeAlert({
+                    symbol,
+                    side: 'buy',
+                    qty: qty.toFixed(4),
+                    price: price.toFixed(2),
+                    balance: newAccount ? newAccount.buying_power : '?'
+                });
             }
         }
 
@@ -99,21 +110,38 @@ class AlpacaTrader {
         const positions = await alpacaService.getPositions();
         const closed = [];
 
-        console.log(`🔍 Monitoring ${positions.length} open positions...`);
+        // console.log(`🔍 Monitoring ${positions.length} open positions...`);
 
         for (const pos of positions) {
             const plPct = parseFloat(pos.unrealized_plpc) * 100; // e.g. 0.05 -> 5%
             const symbol = pos.symbol;
+            const currentPrice = parseFloat(pos.current_price);
+            const qty = parseFloat(pos.qty);
+
+            let reason = null;
 
             // Strategy: TP at +5%, SL at -2%
             if (plPct >= 5.0) {
                 console.log(`🎯 Take Profit triggered for ${symbol} (+${plPct.toFixed(2)}%)`);
-                await alpacaService.closePosition(symbol);
-                closed.push({ symbol, reason: 'TP', pl: plPct });
+                reason = 'TP';
             } else if (plPct <= -2.0) {
                 console.log(`🛑 Stop Loss triggered for ${symbol} (${plPct.toFixed(2)}%)`);
+                reason = 'SL';
+            }
+
+            if (reason) {
                 await alpacaService.closePosition(symbol);
-                closed.push({ symbol, reason: 'SL', pl: plPct });
+                closed.push({ symbol, reason, pl: plPct });
+
+                // Notification
+                const newAccount = await alpacaService.getAccount();
+                await notificationService.sendTradeAlert({
+                    symbol,
+                    side: 'sell',
+                    qty: qty.toFixed(4),
+                    price: currentPrice.toFixed(2),
+                    balance: newAccount ? newAccount.buying_power : '?'
+                });
             }
         }
 

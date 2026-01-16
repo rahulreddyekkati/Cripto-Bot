@@ -102,7 +102,7 @@ class SignalGenerator {
         // Determine confidence tier
         const bullishSignals = signals.filter(s => s.type === 'bullish');
         let confidenceTier = 'low';
-        let requiredSignals = Math.ceil(4 * regimeMultiplier);
+        let requiredSignals = Math.ceil(3 * regimeMultiplier);
 
         if (bullishSignals.length >= requiredSignals + 1 && netScore >= 4) {
             confidenceTier = 'high';

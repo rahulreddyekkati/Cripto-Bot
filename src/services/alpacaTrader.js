@@ -43,7 +43,7 @@ class AlpacaTrader {
         // 3. Get Top Predictions (Strong Buy)
         const topPicks = prepare(`
             SELECT * FROM predictions 
-            WHERE confidence_tier = 'high' 
+            WHERE confidence_tier IN ('high', 'medium') 
             AND created_at > datetime('now', '-24 hours')
             ORDER BY ml_probability DESC
             LIMIT 3

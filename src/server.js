@@ -356,8 +356,7 @@ cron.schedule('0 * * * *', async () => {
 
 // Check positions every 1 minute for TP/SL (Real-time tracking)
 cron.schedule('*/1 * * * *', async () => {
-    // console.log('\n[CRON] 🔄 Checking positions on Alpaca...'); 
-    // Commented out log to reduce noise every minute
+    console.log('\n[CRON] 🔄 Checking positions on Alpaca...');
     try {
         const closed = await alpacaTrader.checkPositions();
         if (closed.length > 0) {

@@ -131,7 +131,7 @@ class AlpacaTrader {
         const positions = await alpacaService.getPositions();
         const closed = [];
 
-        // console.log(`🔍 Monitoring ${positions.length} open positions...`);
+        console.log(`🔍 Monitoring ${positions.length} open positions...`);
 
         for (const pos of positions) {
             const plPct = parseFloat(pos.unrealized_plpc) * 100; // e.g. 0.05 -> 5%

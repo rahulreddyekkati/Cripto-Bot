@@ -18,12 +18,17 @@ class DataCollector {
         this.cache = new Map();
         this.dbReady = false;
 
-        // Major pairs for Alpaca Paper Trading
+        // All Alpaca-supported USD pairs (expanded)
         this.targetPairs = [
-            'BTC/USD', 'ETH/USD', 'SOL/USD', 'BNB/USD', 'XRP/USD',
-            'ADA/USD', 'DOGE/USD', 'AVAX/USD', 'LINK/USD', 'DOT/USD',
-            'LTC/USD', 'UNI/USD', 'BCH/USD', 'SHIB/USD', 'AAVE/USD',
-            'NEAR/USD', 'TRX/USD', 'MATIC/USD', 'ATOM/USD', 'XLM/USD'
+            // Major Coins
+            'BTC/USD', 'ETH/USD', 'SOL/USD', 'XRP/USD', 'DOGE/USD',
+            // Mid Caps
+            'AVAX/USD', 'LINK/USD', 'DOT/USD', 'LTC/USD', 'UNI/USD',
+            'BCH/USD', 'SHIB/USD', 'AAVE/USD', 'ATOM/USD',
+            // Trending / Meme Coins
+            'PEPE/USD', 'TRUMP/USD',
+            // DeFi & Others
+            'CRV/USD', 'GRT/USD', 'SUSHI/USD', 'BAT/USD', 'XTZ/USD', 'YFI/USD', 'MKR/USD'
         ];
     }
 

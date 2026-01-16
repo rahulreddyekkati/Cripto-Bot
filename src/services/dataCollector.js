@@ -43,7 +43,7 @@ class DataCollector {
     /**
      * Fetch top coins - NOW USING ALPACA (Fast & Reliable)
      */
-    async fetchTopCoins(limit = 20) {
+    async fetchTopCoins(limit = 100) {
         await this.ensureDb();
         console.log(`🦙 Fetching data for ${this.targetPairs.length} pairs via Alpaca...`);
 
@@ -63,12 +63,14 @@ class DataCollector {
                     name: pair,
                     market_cap_rank: rank++,
                     current_price: price,
-                    total_volume: 100_000_000_000, // Dummy high volume to pass filters
+                    total_volume: 100_000_000_000,
                     price_change_percentage_24h: 0,
                     price_change_percentage_7d_in_currency: 0,
                     ath: 0,
                     atl: 0
                 });
+            } else {
+                console.warn(`⚠️ No price found for ${pair} (Skipping)`);
             }
         }
 

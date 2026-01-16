@@ -54,6 +54,16 @@ class AlpacaTrader {
             return { status: 'no_signals' };
         }
 
+        // Large Cap Diversification Rule
+        const LARGE_CAPS = ['BTC', 'ETH', 'XRP'];
+        const MAX_LARGE_CAP_POSITIONS = 2;
+        const LARGE_CAP_OVERRIDE_CONFIDENCE = 85;
+
+        // Count existing large cap positions
+        const largeCapsOwned = positions.filter(p =>
+            LARGE_CAPS.some(lc => p.symbol.toUpperCase().includes(lc))
+        ).length;
+
         const executed = [];
 
         // 4. Execute Trades
@@ -64,6 +74,17 @@ class AlpacaTrader {
             if (hasPosition) {
                 console.log(`Skipping ${pick.coin_id}, already owned.`);
                 continue;
+            }
+
+            // Check Large Cap Limit
+            const isLargeCap = LARGE_CAPS.includes(pick.coin_id.toUpperCase());
+            if (isLargeCap && largeCapsOwned >= MAX_LARGE_CAP_POSITIONS) {
+                // Only allow if confidence is very high
+                if (pick.confidence < LARGE_CAP_OVERRIDE_CONFIDENCE) {
+                    console.log(`⚡ Skipping ${pick.coin_id} (Large Cap limit: ${largeCapsOwned}/${MAX_LARGE_CAP_POSITIONS}, Confidence: ${pick.confidence}% < ${LARGE_CAP_OVERRIDE_CONFIDENCE}%)`);
+                    continue;
+                }
+                console.log(`🔥 Override: Buying ${pick.coin_id} despite Large Cap limit (Confidence: ${pick.confidence}% >= ${LARGE_CAP_OVERRIDE_CONFIDENCE}%)`);
             }
 
             // Calculate Order Size

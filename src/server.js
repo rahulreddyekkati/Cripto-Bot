@@ -328,34 +328,32 @@ app.post('/api/paper/reset', (req, res) => {
 
 const alpacaTrader = require('./services/alpacaTrader');
 
-// Refresh predictions every 1 hour (Alpaca is fast!)
+// Refresh predictions AND execute trades sequentially every 1 hour
 cron.schedule('0 * * * *', async () => {
     if (isProcessingPredictions) {
-        console.log('[CRON] Skipping prediction refresh - already in progress');
+        console.log('[CRON] Skipping cycle - already in progress');
         return;
     }
 
-    console.log('\n[CRON] Refreshing predictions...');
+    console.log('\n[CRON] ⏰ Hourly Cycle Starting...');
     isProcessingPredictions = true;
 
     try {
+        // Step 1: Brain (Predict)
+        console.log('[CRON] 🧠 Generating new predictions...');
         await predictionEngine.generatePredictions();
-        console.log('[CRON] Prediction refresh complete');
+        console.log('[CRON] ✅ Predictions complete.');
+
+        // Step 2: Hands (Trade)
+        console.log('[CRON] 🤖 Executing trades based on fresh data...');
+        const result = await alpacaTrader.executeDailyTrade();
+        console.log('[CRON] 💰 Trade result:', result);
+
     } catch (error) {
-        console.error('[CRON] Prediction refresh failed:', error);
+        console.error('[CRON] Cycle failed:', error);
     } finally {
         isProcessingPredictions = false;
-    }
-});
-
-// Execute trades every hour (Looking for opportunities 24/7)
-cron.schedule('0 * * * *', async () => {
-    console.log('\n[CRON] 🤖 AUTONOMOUS: Checking for actionable trade signals...');
-    try {
-        const result = await alpacaTrader.executeDailyTrade();
-        console.log('[CRON] Daily trade result:', result);
-    } catch (error) {
-        console.error('[CRON] Daily trade failed:', error);
+        console.log('[CRON] 🏁 Cycle finished.\n');
     }
 });
 

@@ -330,8 +330,8 @@ const alpacaTrader = require('./services/alpacaTrader');
 
 let isProcessingPredictions = false;
 
-// Refresh predictions AND execute trades sequentially every 1 hour
-cron.schedule('0 * * * *', async () => {
+// Refresh predictions AND execute trades sequentially every 30 minutes
+cron.schedule('0,30 * * * *', async () => {
     if (isProcessingPredictions) {
         console.log('[CRON] Skipping cycle - already in progress');
         return;

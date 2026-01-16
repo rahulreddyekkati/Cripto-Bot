@@ -24,12 +24,11 @@ class DataCollector {
             'BTC/USD', 'ETH/USD', 'SOL/USD', 'XRP/USD', 'DOGE/USD',
             // Mid Caps
             'AVAX/USD', 'LINK/USD', 'DOT/USD', 'LTC/USD', 'UNI/USD',
-            'BCH/USD', 'SHIB/USD', 'AAVE/USD', 'ATOM/USD',
+            'BCH/USD', 'SHIB/USD', 'AAVE/USD',
             // Trending / Meme Coins
             'PEPE/USD', 'TRUMP/USD',
             // DeFi & Others
-            'CRV/USD', 'GRT/USD', 'SUSHI/USD', 'BAT/USD', 'XTZ/USD', 'YFI/USD', 'MKR/USD',
-            'CHZ/USD'
+            'CRV/USD', 'GRT/USD', 'SUSHI/USD', 'BAT/USD', 'XTZ/USD', 'YFI/USD', 'SKY/USD'
         ];
     }
 

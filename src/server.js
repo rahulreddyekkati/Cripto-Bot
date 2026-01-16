@@ -99,9 +99,14 @@ app.post('/api/predictions/refresh', async (req, res) => {
         console.log('Manual prediction refresh triggered');
         const predictions = await predictionEngine.generatePredictions();
 
+        // Also trigger trade execution immediately
+        console.log('Manual trade execution triggered');
+        const tradeResult = await alpacaTrader.executeDailyTrade();
+
         res.json({
             success: true,
             count: predictions.length,
+            trades: tradeResult,
             lastUpdated: predictionEngine.lastUpdateTime
         });
     } catch (error) {

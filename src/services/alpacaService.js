@@ -1,15 +1,27 @@
 const axios = require('axios');
 
+/**
+ * Alpaca Service
+ * Handles both Data API (v1beta3) and Trading API (v2)
+ */
 class AlpacaService {
     constructor() {
         this.apiKey = process.env.ALPACA_API_KEY;
         this.apiSecret = process.env.ALPACA_SECRET_KEY;
-        this.baseUrl = 'https://data.alpaca.markets/v1beta3/crypto/us'; // Data API is always Live, keys authorize it
+
+        // Data API (Always Live URL for Crypto Data)
+        this.dataUrl = 'https://data.alpaca.markets/v1beta3/crypto/us';
+
+        // Trading API (Depends on Paper vs Live)
+        const isPaper = process.env.ALPACA_PAPER === 'true';
+        this.tradeUrl = isPaper
+            ? 'https://paper-api.alpaca.markets/v2'
+            : 'https://api.alpaca.markets/v2';
 
         if (!this.apiKey || !this.apiSecret) {
             console.warn('⚠️ Alpaca credentials missing. Service disabled.');
         } else {
-            console.log('🦙 Alpaca Service Initialized (Axios Mode)');
+            console.log(`🦙 Alpaca Service Initialized (Axios Mode) | Trade URL: ${this.tradeUrl}`);
         }
     }
 
@@ -21,62 +33,41 @@ class AlpacaService {
         };
     }
 
+    // ==========================================
+    // DATA METHODS (Market Data)
+    // ==========================================
+
     /**
      * Get historical bars for a list of symbols
      * Endpoint: /bars
      */
     async getBars(symbols, timeframe = '1Hour', limit = 168) {
         if (!this.apiKey) return {};
-
         try {
-            // Join symbols with comma
             const symbolsParam = symbols.join(',');
-
-            // Calculate start time (Alpaca defaults to 'today' if not specified)
-            // We want 'limit' candles back. 
-            // 1Hour -> limit hours ago
-            // 1Day -> limit days ago
             let lookbackHours = limit;
             if (timeframe === '1Day') lookbackHours = limit * 24;
-
-            // Add a buffer of 20% to be safe
             lookbackHours = Math.ceil(lookbackHours * 1.25);
-
-            // Calculate start time relative to NOW
             const start = new Date(Date.now() - (lookbackHours * 60 * 60 * 1000)).toISOString();
 
-            const response = await axios.get(`${this.baseUrl}/bars`, {
+            const response = await axios.get(`${this.dataUrl}/bars`, {
                 headers: this._getHeaders(),
-                params: {
-                    symbols: symbolsParam,
-                    timeframe: timeframe,
-                    start: start,
-                    limit: limit,
-                    sort: 'asc'
-                },
+                params: { symbols: symbolsParam, timeframe, start, limit, sort: 'asc' },
                 timeout: 10000
             });
 
-            // Struct: { bars: { "BTC/USD": [ { t, o, h, l, c, v }, ... ] } }
             const result = {};
             const data = response.data.bars || {};
-
             for (const sym of symbols) {
                 if (data[sym]) {
                     result[sym] = data[sym].map(b => [
-                        new Date(b.t).getTime(), // timestamp
-                        b.o, // open
-                        b.h, // high
-                        b.l, // low
-                        b.c, // close
-                        b.v  // volume
+                        new Date(b.t).getTime(), b.o, b.h, b.l, b.c, b.v
                     ]);
                 }
             }
             return result;
-
         } catch (error) {
-            console.error('Alpaca getBars Error:', error.response?.status, error.response?.data?.message || error.message);
+            console.error('Alpaca getBars Error:', error.response?.status, error.message);
             return {};
         }
     }
@@ -87,32 +78,111 @@ class AlpacaService {
      */
     async getLatestPrices(symbols) {
         if (!this.apiKey) return {};
-
         try {
             const symbolsParam = symbols.join(',');
-
-            const response = await axios.get(`${this.baseUrl}/latest/trades`, {
+            const response = await axios.get(`${this.dataUrl}/latest/trades`, {
                 headers: this._getHeaders(),
-                params: {
-                    symbols: symbolsParam
-                },
+                params: { symbols: symbolsParam },
                 timeout: 5000
             });
-
-            // Struct: { trades: { "BTC/USD": { t, p, s, ... } } }
             const prices = {};
             const data = response.data.trades || {};
-
             for (const sym of symbols) {
-                if (data[sym]) {
-                    prices[sym] = parseFloat(data[sym].p);
-                }
+                if (data[sym]) prices[sym] = parseFloat(data[sym].p);
             }
             return prices;
-
         } catch (error) {
-            console.error('Alpaca getLatestPrices Error:', error.response?.status, error.response?.data?.message || error.message);
+            console.error('Alpaca getLatestPrices Error:', error.message);
             return {};
+        }
+    }
+
+    // ==========================================
+    // TRADING METHODS (Execution)
+    // ==========================================
+
+    /**
+     * Get Account Info (Buying Power, Cash)
+     */
+    async getAccount() {
+        if (!this.apiKey) return null;
+        try {
+            const response = await axios.get(`${this.tradeUrl}/account`, {
+                headers: this._getHeaders()
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Alpaca getAccount Error:', error.response?.status, error.response?.data?.message);
+            return null;
+        }
+    }
+
+    /**
+     * Get Open Crypto Positions
+     */
+    async getPositions() {
+        if (!this.apiKey) return [];
+        try {
+            const response = await axios.get(`${this.tradeUrl}/positions`, {
+                headers: this._getHeaders()
+            });
+            return response.data; // Array of positions
+        } catch (error) {
+            console.error('Alpaca getPositions Error:', error.response?.status, error.message);
+            return [];
+        }
+    }
+
+    /**
+     * Create Order
+     * @param {string} symbol - e.g. 'BTC/USD'
+     * @param {number} qty - Quantity to buy/sell (Coins) OR notional (USD)
+     * @param {string} side - 'buy' or 'sell'
+     */
+    async createOrder(symbol, qty, side = 'buy') {
+        if (!this.apiKey) return null;
+        try {
+            // Alpaca V2 Order
+            const body = {
+                symbol: symbol,
+                qty: parseFloat(qty).toFixed(4), // Ensure reasonably string format
+                side: side,
+                type: 'market',
+                time_in_force: 'gtc'
+            };
+
+            console.log(`🦙 Sending Order: ${side.toUpperCase()} ${qty} ${symbol}`);
+
+            const response = await axios.post(`${this.tradeUrl}/orders`, body, {
+                headers: this._getHeaders()
+            });
+            return response.data;
+        } catch (error) {
+            console.error(`Alpaca createOrder Error (${symbol}):`, error.response?.data?.message || error.message);
+            return null;
+        }
+    }
+
+    /**
+     * Close specific position (Market Sell)
+     */
+    async closePosition(symbol) {
+        if (!this.apiKey) return null;
+        try {
+            console.log(`🦙 Closing Position: ${symbol}`);
+            // Alpaca V2 often works better with symbol in URL
+            // Ensure encoding if it contains '/'
+            const encodedSym = encodeURIComponent(symbol);
+            const response = await axios.delete(`${this.tradeUrl}/positions/${encodedSym}`, {
+                headers: this._getHeaders()
+            });
+            return response.data;
+        } catch (error) {
+            // If 404, position likely already closed
+            if (error.response?.status !== 404) {
+                console.error(`Alpaca closePosition Error (${symbol}):`, error.response?.data?.message);
+            }
+            return null;
         }
     }
 }

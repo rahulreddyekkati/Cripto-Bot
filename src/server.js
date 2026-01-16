@@ -321,10 +321,10 @@ app.post('/api/paper/reset', (req, res) => {
 
 // ========== AUTONOMOUS TRADING CRON JOBS ==========
 
-// Refresh predictions every 4 hours
-let isProcessingPredictions = false;
+const alpacaTrader = require('./services/alpacaTrader');
 
-cron.schedule('0 */4 * * *', async () => {
+// Refresh predictions every 1 hour (Alpaca is fast!)
+cron.schedule('0 * * * *', async () => {
     if (isProcessingPredictions) {
         console.log('[CRON] Skipping prediction refresh - already in progress');
         return;
@@ -345,20 +345,21 @@ cron.schedule('0 */4 * * *', async () => {
 
 // Execute daily trades at 8 AM (autonomous mode)
 cron.schedule('0 8 * * *', async () => {
-    console.log('\n[CRON] 🤖 AUTONOMOUS: Executing daily trade...');
+    console.log('\n[CRON] 🤖 AUTONOMOUS: Executing daily trade (Alpaca)...');
     try {
-        const result = await paperTrader.executeDailyTrade();
+        const result = await alpacaTrader.executeDailyTrade();
         console.log('[CRON] Daily trade result:', result);
     } catch (error) {
         console.error('[CRON] Daily trade failed:', error);
     }
 });
 
-// Check positions every 30 minutes for TP/SL
-cron.schedule('*/30 * * * *', async () => {
-    console.log('\n[CRON] 🔄 Checking positions...');
+// Check positions every 1 minute for TP/SL (Real-time tracking)
+cron.schedule('*/1 * * * *', async () => {
+    // console.log('\n[CRON] 🔄 Checking positions on Alpaca...'); 
+    // Commented out log to reduce noise every minute
     try {
-        const closed = await paperTrader.checkPositions();
+        const closed = await alpacaTrader.checkPositions();
         if (closed.length > 0) {
             console.log('[CRON] Closed positions:', closed);
         }

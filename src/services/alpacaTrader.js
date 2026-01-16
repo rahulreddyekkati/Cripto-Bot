@@ -67,24 +67,32 @@ class AlpacaTrader {
         const executed = [];
 
         // 4. Execute Trades
+        // 4. Execute Trades
         for (const pick of topPicks) {
+            // Derive Symbol (e.g. 'btc' -> 'BTC')
+            // Using ID from DB
+            const symbolRaw = pick.coin_id.toUpperCase();
+            // Alpaca format usually 'BTC/USD'
+            const symbol = `${symbolRaw}/USD`;
+
             // Check if we already own it
-            // Alpaca symbols are usually 'BTC/USD' or 'BTCUSD'
-            const hasPosition = positions.find(p => p.symbol.includes(pick.coin_id.toUpperCase()));
+            const hasPosition = positions.find(p => p.symbol.includes(symbolRaw));
             if (hasPosition) {
-                console.log(`Skipping ${pick.coin_id}, already owned.`);
+                console.log(`⚠️ Skipping ${symbolRaw} (Already in portfolio)`);
                 continue;
             }
 
             // Check Large Cap Limit
-            const isLargeCap = LARGE_CAPS.includes(pick.coin_id.toUpperCase());
+            const isLargeCap = LARGE_CAPS.includes(symbolRaw);
+            const confidenceScore = pick.ml_probability ? (pick.ml_probability * 100) : 0;
+
             if (isLargeCap && largeCapsOwned >= MAX_LARGE_CAP_POSITIONS) {
-                // Only allow if confidence is very high
-                if (pick.confidence < LARGE_CAP_OVERRIDE_CONFIDENCE) {
-                    console.log(`⚡ Skipping ${pick.coin_id} (Large Cap limit: ${largeCapsOwned}/${MAX_LARGE_CAP_POSITIONS}, Confidence: ${pick.confidence}% < ${LARGE_CAP_OVERRIDE_CONFIDENCE}%)`);
+                // Only allow if confidence is VERY high
+                if (confidenceScore < LARGE_CAP_OVERRIDE_CONFIDENCE) {
+                    console.log(`⚡ Skipping ${symbolRaw} (Large Cap limit: ${largeCapsOwned}/${MAX_LARGE_CAP_POSITIONS}, Confidence: ${confidenceScore.toFixed(0)}% < ${LARGE_CAP_OVERRIDE_CONFIDENCE}%)`);
                     continue;
                 }
-                console.log(`🔥 Override: Buying ${pick.coin_id} despite Large Cap limit (Confidence: ${pick.confidence}% >= ${LARGE_CAP_OVERRIDE_CONFIDENCE}%)`);
+                console.log(`🔥 Override: Buying ${symbolRaw} despite Large Cap limit (Confidence: ${confidenceScore.toFixed(0)}% >= ${LARGE_CAP_OVERRIDE_CONFIDENCE}%)`);
             }
 
             // Calculate Order Size
@@ -94,18 +102,22 @@ class AlpacaTrader {
             const safeAmount = Math.max(10, Math.min(tradeAmountUSD, 1000));
 
             // Calculate Qty approx
-            const price = pick.current_price;
-            if (!price || price <= 0) continue;
+            // DB has 'entry_price', NOT 'current_price'
+            const price = pick.entry_price;
+            if (!price || price <= 0) {
+                console.log(`⚠️ Skipping ${symbolRaw}: Price invalid (${price})`);
+                continue;
+            }
 
             const qty = safeAmount / price;
 
-            // Symbol formatting: 'BTC/USD'
-            const symbol = `${pick.coin_id.toUpperCase()}/USD`;
+            // Simple log
+            console.log(`🚀 EXECUTING BUY: ${symbol} | Qty: ${qty.toFixed(4)} | Est: $${price.toFixed(2)}`);
 
-            console.log(`🚀 Buying ${qty.toFixed(4)} ${symbol} ($${safeAmount.toFixed(2)})...`);
-
+            // Execute Order
             const order = await alpacaService.createOrder(symbol, qty, 'buy');
-            if (order) {
+
+            if (order && order.id) {
                 executed.push({ symbol, qty, price: safeAmount });
                 console.log(`✅ Order Filled: ${order.id}`);
 

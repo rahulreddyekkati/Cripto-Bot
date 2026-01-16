@@ -156,18 +156,24 @@ class AlpacaTrader {
             // 1. Get Coin ID (e.g., BTC/USD -> btc)
             const coinId = symbol.split('/')[0].toLowerCase();
 
-            // 2. Fetch latest confidence tier for this coin
+            // 2. Fetch latest confidence tier AND market cap tier
             const pred = prepare(`
-                SELECT confidence_tier FROM predictions 
+                SELECT confidence_tier, market_cap_tier FROM predictions 
                 WHERE coin_id = ? 
                 ORDER BY created_at DESC 
                 LIMIT 1
             `).get(coinId);
 
             // 3. Set Dynamic Rules
-            let tpThreshold = 5.0; // Default (High Confidence)
-            if (pred && pred.confidence_tier === 'medium') {
-                tpThreshold = 3.0; // Medium Confidence
+            let tpThreshold = 5.0; // Default (High Confidence, High Volatility)
+
+            // RULE: "Giants Move Slow" -> Quick Scalp for BTC/ETH
+            if (['btc', 'eth'].includes(coinId)) {
+                tpThreshold = 1.25; // 1.25% Target for Mega Caps
+            }
+            // RULE: Medium Confidence -> Lower Target
+            else if (pred && pred.confidence_tier === 'medium') {
+                tpThreshold = 3.0;
             }
 
             // Check triggers

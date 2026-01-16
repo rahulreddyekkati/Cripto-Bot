@@ -328,6 +328,8 @@ app.post('/api/paper/reset', (req, res) => {
 
 const alpacaTrader = require('./services/alpacaTrader');
 
+let isProcessingPredictions = false;
+
 // Refresh predictions AND execute trades sequentially every 1 hour
 cron.schedule('0 * * * *', async () => {
     if (isProcessingPredictions) {

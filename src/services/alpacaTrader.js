@@ -141,9 +141,26 @@ class AlpacaTrader {
 
             let reason = null;
 
-            // Strategy: TP at +5%, SL at -2%
-            if (plPct >= 5.0) {
-                console.log(`🎯 Take Profit triggered for ${symbol} (+${plPct.toFixed(2)}%)`);
+            // 1. Get Coin ID (e.g., BTC/USD -> btc)
+            const coinId = symbol.split('/')[0].toLowerCase();
+
+            // 2. Fetch latest confidence tier for this coin
+            const pred = prepare(`
+                SELECT confidence_tier FROM predictions 
+                WHERE coin_id = ? 
+                ORDER BY created_at DESC 
+                LIMIT 1
+            `).get(coinId);
+
+            // 3. Set Dynamic Rules
+            let tpThreshold = 5.0; // Default (High Confidence)
+            if (pred && pred.confidence_tier === 'medium') {
+                tpThreshold = 3.0; // Medium Confidence
+            }
+
+            // Check triggers
+            if (plPct >= tpThreshold) {
+                console.log(`🎯 Take Profit triggered for ${symbol} (+${plPct.toFixed(2)}%) [Target: ${tpThreshold}%]`);
                 reason = 'TP';
             } else if (plPct <= -2.0) {
                 console.log(`🛑 Stop Loss triggered for ${symbol} (${plPct.toFixed(2)}%)`);

@@ -43,9 +43,9 @@ class AlpacaTrader {
         // 3. Get Top Predictions (Strong Buy)
         const topPicks = prepare(`
             SELECT * FROM predictions 
-            WHERE signal = 'STRONG_BUY' 
-            AND timestamp > datetime('now', '-24 hours')
-            ORDER BY confidence DESC
+            WHERE confidence_tier = 'high' 
+            AND created_at > datetime('now', '-24 hours')
+            ORDER BY ml_probability DESC
             LIMIT 3
         `).all();
 

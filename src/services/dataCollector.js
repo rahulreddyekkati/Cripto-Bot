@@ -28,7 +28,8 @@ class DataCollector {
             // Trending / Meme Coins
             'PEPE/USD', 'TRUMP/USD',
             // DeFi & Others
-            'CRV/USD', 'GRT/USD', 'SUSHI/USD', 'BAT/USD', 'XTZ/USD', 'YFI/USD', 'MKR/USD'
+            'CRV/USD', 'GRT/USD', 'SUSHI/USD', 'BAT/USD', 'XTZ/USD', 'YFI/USD', 'MKR/USD',
+            'CHZ/USD'
         ];
     }
 

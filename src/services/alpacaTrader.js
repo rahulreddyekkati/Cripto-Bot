@@ -186,18 +186,23 @@ class AlpacaTrader {
             }
 
             if (reason) {
-                await alpacaService.closePosition(symbol);
-                closed.push({ symbol, reason, pl: plPct });
+                const closeResult = await alpacaService.closePosition(symbol);
 
-                // Notification
-                const newAccount = await alpacaService.getAccount();
-                await notificationService.sendTradeAlert({
-                    symbol,
-                    side: 'sell',
-                    qty: qty.toFixed(4),
-                    price: currentPrice.toFixed(2),
-                    balance: newAccount ? newAccount.buying_power : '?'
-                });
+                if (closeResult) {
+                    closed.push({ symbol, reason, pl: plPct });
+
+                    // Notification
+                    const newAccount = await alpacaService.getAccount();
+                    await notificationService.sendTradeAlert({
+                        symbol,
+                        side: 'sell',
+                        qty: qty.toFixed(4),
+                        price: currentPrice.toFixed(2),
+                        balance: newAccount ? newAccount.buying_power : '?'
+                    });
+                } else {
+                    console.error(`❌ Failed to close position for ${symbol}. keeping position open.`);
+                }
             }
         }
 

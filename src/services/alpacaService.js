@@ -180,7 +180,8 @@ class AlpacaService {
         } catch (error) {
             // If 404, position likely already closed
             if (error.response?.status !== 404) {
-                console.error(`Alpaca closePosition Error (${symbol}):`, error.response?.data?.message);
+                console.error(`Alpaca closePosition Error (${symbol}):`, error.response?.status, error.response?.data?.message);
+                console.error('Full Error:', JSON.stringify(error.response?.data || error.message));
             }
             return null;
         }

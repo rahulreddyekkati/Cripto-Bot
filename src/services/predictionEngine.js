@@ -94,7 +94,7 @@ class PredictionEngine {
             // 4. Filter and rank
             console.log('Step 3: Ranking predictions...');
             const filtered = predictions.filter(p =>
-                p.confidenceTier !== 'low' && p.signalCount >= 3
+                p.confidenceTier !== 'low' && p.signalCount >= 4
             );
 
             filtered.sort((a, b) => {

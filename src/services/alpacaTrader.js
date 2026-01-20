@@ -75,10 +75,10 @@ class AlpacaTrader {
             // Alpaca format usually 'BTC/USD'
             const symbol = `${symbolRaw}/USD`;
 
-            // Check if we already own it
-            const hasPosition = positions.find(p => p.symbol.includes(symbolRaw));
+            // Check if we already own it (strict symbol matching)
+            const hasPosition = positions.find(p => p.symbol === symbol || p.symbol.includes(symbolRaw));
             if (hasPosition) {
-                console.log(`⚠️ Skipping ${symbolRaw} (Already in portfolio)`);
+                console.log(`⚠️ Skipping ${symbolRaw} (Already in portfolio - Position exists: ${hasPosition.symbol})`);
                 continue;
             }
 
@@ -156,32 +156,37 @@ class AlpacaTrader {
             // 1. Get Coin ID (e.g., BTC/USD -> btc)
             const coinId = symbol.split('/')[0].toLowerCase();
 
-            // 2. Fetch latest confidence tier AND market cap tier
+            // 2. Fetch prediction with entry price and targets
             const pred = prepare(`
-                SELECT confidence_tier, market_cap_tier FROM predictions 
+                SELECT entry_price, take_profit, stop_loss, confidence_tier, volatility_tier 
+                FROM predictions 
                 WHERE coin_id = ? 
                 ORDER BY created_at DESC 
                 LIMIT 1
             `).get(coinId);
 
-            // 3. Set Dynamic Rules
-            let tpThreshold = 5.0; // Default (High Confidence, High Volatility)
+            // 3. Calculate Dynamic TP/SL from Predictions
+            let tpThreshold = 5.0; // Fallback if no prediction found
+            let slThreshold = -3.0; // Widened from -2% to -3%
 
-            // RULE: "Giants Move Slow" -> Quick Scalp for BTC/ETH
-            if (['btc', 'eth'].includes(coinId)) {
-                tpThreshold = 1.25; // 1.25% Target for Mega Caps
-            }
-            // RULE: Medium Confidence -> Lower Target
-            else if (pred && pred.confidence_tier === 'medium') {
-                tpThreshold = 3.0;
+            if (pred && pred.entry_price && pred.take_profit) {
+                // Calculate actual TP percentage from prediction
+                const predictedTpPct = ((pred.take_profit - pred.entry_price) / pred.entry_price) * 100;
+
+                // Use predicted TP, but with reasonable bounds (0.5% min, 15% max)
+                tpThreshold = Math.max(0.5, Math.min(15.0, predictedTpPct));
+
+                console.log(`📊 ${symbol} - Using DYNAMIC TP: ${tpThreshold.toFixed(2)}% (Predicted: ${predictedTpPct.toFixed(2)}%, Confidence: ${pred.confidence_tier}, Volatility: ${pred.volatility_tier})`);
+            } else {
+                console.log(`⚠️ ${symbol} - No prediction found, using default TP: ${tpThreshold}%`);
             }
 
             // Check triggers
             if (plPct >= tpThreshold) {
-                console.log(`🎯 Take Profit triggered for ${symbol} (+${plPct.toFixed(2)}%) [Target: ${tpThreshold}%]`);
+                console.log(`🎯 Take Profit triggered for ${symbol} (+${plPct.toFixed(2)}%) [Target: ${tpThreshold.toFixed(2)}%]`);
                 reason = 'TP';
-            } else if (plPct <= -2.0) {
-                console.log(`🛑 Stop Loss triggered for ${symbol} (${plPct.toFixed(2)}%)`);
+            } else if (plPct <= slThreshold) {
+                console.log(`🛑 Stop Loss triggered for ${symbol} (${plPct.toFixed(2)}%) [Threshold: ${slThreshold}%]`);
                 reason = 'SL';
             }
 

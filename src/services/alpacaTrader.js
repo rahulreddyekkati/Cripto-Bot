@@ -173,9 +173,9 @@ class AlpacaTrader {
                 tpPrice = pred.take_profit;
                 console.log(`📊 ${symbol} - Current: $${currentPrice.toFixed(4)} | TP Target: $${tpPrice.toFixed(4)} | P/L: ${plPct >= 0 ? '+' : ''}${plPct.toFixed(2)}% | Confidence: ${pred.confidence_tier}`);
             } else {
-                // Fallback: use 5% from current price if no prediction
-                tpPrice = currentPrice * 1.05;
-                console.log(`⚠️ ${symbol} - No prediction found, using fallback TP: 5% from current price`);
+                // Fallback: use 3% from current price if no prediction (realistic for weak signals)
+                tpPrice = currentPrice * 1.03;
+                console.log(`⚠️ ${symbol} - No prediction found, using fallback TP: 3% from current price ($${tpPrice.toFixed(4)})`);
             }
 
             // Check triggers using ABSOLUTE PRICE for TP, PERCENTAGE for SL

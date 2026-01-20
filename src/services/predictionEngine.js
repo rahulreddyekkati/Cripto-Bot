@@ -91,10 +91,10 @@ class PredictionEngine {
                 }
             }
 
-            // 4. Filter and rank
+            // 4. Filter and rank using WEIGHTED SCORES
             console.log('Step 3: Ranking predictions...');
             const filtered = predictions.filter(p =>
-                p.confidenceTier !== 'low' && p.signalCount >= 4
+                p.confidenceTier !== 'low' && p.netScore >= 2.0
             );
 
             filtered.sort((a, b) => {

@@ -99,16 +99,21 @@ class SignalGenerator {
         const adjustedBullScore = bullScore / regimeMultiplier;
         const netScore = adjustedBullScore - bearScore;
 
-        // Determine confidence tier
+        // Determine confidence tier using WEIGHTED SCORES (not just count)
         const bullishSignals = signals.filter(s => s.type === 'bullish');
         let confidenceTier = 'low';
-        let requiredSignals = Math.ceil(3 * regimeMultiplier);
 
-        if (bullishSignals.length >= requiredSignals + 1 && netScore >= 4) {
+        // Use bullScore (weighted total) instead of signal count
+        // Max possible bullScore: 8.75 (all 8 indicators)
+        // HIGH: Requires strong confluence (5.5+ weighted score AND net profit of 4+)
+        // MEDIUM: Moderate confluence (4.0+ weighted score AND net profit of 2+)
+
+        if (adjustedBullScore >= 5.5 && netScore >= 4) {
             confidenceTier = 'high';
-        } else if (bullishSignals.length >= requiredSignals && netScore >= 2) {
+        } else if (adjustedBullScore >= 4.0 && netScore >= 2) {
             confidenceTier = 'medium';
         }
+        // Anything below 4.0 weighted score = low confidence (filtered out)
 
         const marketCapTier = this._getMarketCapTier(coinInfo?.market_cap);
         const volatilityTier = this._getVolatilityTier(indicators.atrPercent);

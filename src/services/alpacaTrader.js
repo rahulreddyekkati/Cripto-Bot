@@ -193,14 +193,16 @@ class AlpacaTrader {
                 if (closeResult) {
                     closed.push({ symbol, reason, pl: plPct });
 
-                    // Notification
+                    // Notification with exit reason
                     const newAccount = await alpacaService.getAccount();
                     await notificationService.sendTradeAlert({
                         symbol,
                         side: 'sell',
                         qty: qty.toFixed(4),
                         price: currentPrice.toFixed(2),
-                        balance: newAccount ? newAccount.buying_power : '?'
+                        balance: newAccount ? newAccount.buying_power : '?',
+                        reason: reason, // 'TP' or 'SL'
+                        plPct: plPct.toFixed(2)
                     });
                 } else {
                     console.error(`❌ Failed to close position for ${symbol}. keeping position open.`);

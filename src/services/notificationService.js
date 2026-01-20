@@ -15,20 +15,40 @@ class NotificationService {
         try {
             const isBuy = trade.side.toLowerCase() === 'buy';
             const color = isBuy ? 5763719 : 15548997; // Green (Buy) or Red (Sell)
-            const title = isBuy ? `🚀 BOUGHT ${trade.symbol}` : `💰 SOLD ${trade.symbol}`;
+
+            // For sell: add reason emoji
+            let title = isBuy ? `🚀 BOUGHT ${trade.symbol}` : `💰 SOLD ${trade.symbol}`;
+            if (!isBuy && trade.reason) {
+                title = trade.reason === 'TP'
+                    ? `🎯 SOLD ${trade.symbol} (Take Profit)`
+                    : `🛑 SOLD ${trade.symbol} (Stop Loss)`;
+            }
             const emoji = isBuy ? '📈' : '📉';
 
             // Format Balance
             const balanceStr = trade.balance ? `$${parseFloat(trade.balance).toFixed(2)}` : 'N/A';
 
+            const fields = [
+                { name: 'Price', value: `$${trade.price}`, inline: true },
+                { name: 'Quantity', value: `${trade.qty}`, inline: true }
+            ];
+
+            // Add P/L for sell orders
+            if (!isBuy && trade.plPct) {
+                const plEmoji = parseFloat(trade.plPct) >= 0 ? '✅' : '❌';
+                fields.push({
+                    name: 'P/L',
+                    value: `${plEmoji} ${trade.plPct >= 0 ? '+' : ''}${trade.plPct}%`,
+                    inline: true
+                });
+            }
+
+            fields.push({ name: '💰 Cash Left', value: balanceStr, inline: false });
+
             const embed = {
                 title: `${emoji} ${title}`,
                 color: color,
-                fields: [
-                    { name: 'Price', value: `$${trade.price}`, inline: true },
-                    { name: 'Quantity', value: `${trade.qty}`, inline: true },
-                    { name: '💰 Cash Left', value: balanceStr, inline: false }
-                ],
+                fields: fields,
                 footer: { text: 'Alpaca Auto-Trader 🤖' },
                 timestamp: new Date().toISOString()
             };

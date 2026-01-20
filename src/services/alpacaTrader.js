@@ -165,25 +165,22 @@ class AlpacaTrader {
                 LIMIT 1
             `).get(coinId);
 
-            // 3. Calculate Dynamic TP/SL from Predictions
-            let tpThreshold = 5.0; // Fallback if no prediction found
-            let slThreshold = -3.0; // Widened from -2% to -3%
+            // 3. Compare current price vs predicted TP price (ABSOLUTE prices, not percentages)
+            let tpPrice = null;
+            let slThreshold = -3.0; // -3% stop loss
 
-            if (pred && pred.entry_price && pred.take_profit) {
-                // Calculate actual TP percentage from prediction
-                const predictedTpPct = ((pred.take_profit - pred.entry_price) / pred.entry_price) * 100;
-
-                // Use predicted TP, but with reasonable bounds (0.5% min, 15% max)
-                tpThreshold = Math.max(0.5, Math.min(15.0, predictedTpPct));
-
-                console.log(`📊 ${symbol} - Using DYNAMIC TP: ${tpThreshold.toFixed(2)}% (Predicted: ${predictedTpPct.toFixed(2)}%, Confidence: ${pred.confidence_tier}, Volatility: ${pred.volatility_tier})`);
+            if (pred && pred.take_profit) {
+                tpPrice = pred.take_profit;
+                console.log(`📊 ${symbol} - Current: $${currentPrice.toFixed(4)} | TP Target: $${tpPrice.toFixed(4)} | P/L: ${plPct >= 0 ? '+' : ''}${plPct.toFixed(2)}% | Confidence: ${pred.confidence_tier}`);
             } else {
-                console.log(`⚠️ ${symbol} - No prediction found, using default TP: ${tpThreshold}%`);
+                // Fallback: use 5% from current price if no prediction
+                tpPrice = currentPrice * 1.05;
+                console.log(`⚠️ ${symbol} - No prediction found, using fallback TP: 5% from current price`);
             }
 
-            // Check triggers
-            if (plPct >= tpThreshold) {
-                console.log(`🎯 Take Profit triggered for ${symbol} (+${plPct.toFixed(2)}%) [Target: ${tpThreshold.toFixed(2)}%]`);
+            // Check triggers using ABSOLUTE PRICE for TP, PERCENTAGE for SL
+            if (currentPrice >= tpPrice) {
+                console.log(`🎯 Take Profit triggered for ${symbol} at $${currentPrice.toFixed(4)} (Target: $${tpPrice.toFixed(4)}) | Your P/L: +${plPct.toFixed(2)}%`);
                 reason = 'TP';
             } else if (plPct <= slThreshold) {
                 console.log(`🛑 Stop Loss triggered for ${symbol} (${plPct.toFixed(2)}%) [Threshold: ${slThreshold}%]`);

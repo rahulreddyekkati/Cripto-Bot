@@ -1,5 +1,6 @@
 const alpacaService = require('./alpacaService');
 const notificationService = require('./notificationService');
+const positionTracker = require('./positionTracker');
 const { prepare } = require('../db/database');
 
 /**
@@ -121,6 +122,10 @@ class AlpacaTrader {
                 executed.push({ symbol, qty, price: safeAmount });
                 console.log(`✅ Order Filled: ${order.id}`);
 
+                // Initialize position tracking with 3% initial TP
+                const initialTP = price * 1.03;
+                positionTracker.initPosition(symbol, price, initialTP);
+
                 // Get updated balance for notification
                 const newAccount = await alpacaService.getAccount();
                 await notificationService.sendTradeAlert({
@@ -153,36 +158,42 @@ class AlpacaTrader {
 
             let reason = null;
 
-            // 1. Get Coin ID (e.g., BTC/USD -> btc)
-            const coinId = symbol.split('/')[0].toLowerCase();
+            // 1. Get or initialize position tracking
+            const entryPrice = parseFloat(pos.avg_entry_price);
+            let tracked = positionTracker.getPosition(symbol);
 
-            // 2. Fetch prediction with entry price and targets
-            const pred = prepare(`
-                SELECT entry_price, take_profit, stop_loss, confidence_tier, volatility_tier 
-                FROM predictions 
-                WHERE coin_id = ? 
-                ORDER BY created_at DESC 
-                LIMIT 1
-            `).get(coinId);
-
-            // 3. Compare current price vs predicted TP price (ABSOLUTE prices, not percentages)
-            let tpPrice = null;
-            let slThreshold = -3.0; // -3% stop loss
-
-            if (pred && pred.take_profit) {
-                tpPrice = pred.take_profit;
-                console.log(`📊 ${symbol} - Current: $${currentPrice.toFixed(4)} | TP Target: $${tpPrice.toFixed(4)} | P/L: ${plPct >= 0 ? '+' : ''}${plPct.toFixed(2)}% | Confidence: ${pred.confidence_tier}`);
-            } else {
-                // Fallback: use 3% from current price if no prediction (realistic for weak signals)
-                tpPrice = currentPrice * 1.03;
-                console.log(`⚠️ ${symbol} - No prediction found, using fallback TP: 3% from current price ($${tpPrice.toFixed(4)})`);
+            if (!tracked) {
+                // Position not tracked yet (opened before tracker was added)
+                const initialTP = entryPrice * 1.03; // 3% TP
+                positionTracker.initPosition(symbol, entryPrice, initialTP);
+                tracked = positionTracker.getPosition(symbol);
             }
 
-            // Check triggers using ABSOLUTE PRICE for TP, PERCENTAGE for SL
-            if (currentPrice >= tpPrice) {
-                console.log(`🎯 Take Profit triggered for ${symbol} at $${currentPrice.toFixed(4)} (Target: $${tpPrice.toFixed(4)}) | Your P/L: +${plPct.toFixed(2)}%`);
-                reason = 'TP';
+            // 2. Update peak price if current is higher
+            const peakUpdated = positionTracker.updatePeak(symbol, currentPrice);
+            if (peakUpdated) {
+                console.log(`📈 ${symbol} - New peak! $${currentPrice.toFixed(4)}`);
+            }
+
+            // 3. Trailing Stop Logic
+            const slThreshold = -3.0; // -3% stop loss
+
+            const initialTP = tracked.initialTP;
+            const peakPrice = tracked.peakPrice;
+            const trailingStopPct = 0.018; // 1.8% trailing from peak
+            const trailingStopPrice = peakPrice * (1 - trailingStopPct);
+
+            console.log(`📊 ${symbol} - Price: $${currentPrice.toFixed(4)} | Entry: $${entryPrice.toFixed(4)} | Peak: $${peakPrice.toFixed(4)} | Initial TP: $${initialTP.toFixed(4)} | Trail Stop: $${trailingStopPrice.toFixed(4)} | P/L: ${plPct >= 0 ? '+' : ''}${plPct.toFixed(2)}%`);
+
+            // Check triggers
+            if (currentPrice >= initialTP) {
+                // Above initial TP - use trailing stop
+                if (currentPrice <= trailingStopPrice) {
+                    console.log(`🎯 Trailing Stop triggered for ${symbol} at $${currentPrice.toFixed(4)} (${trailingStopPct * 100}% from peak $${peakPrice.toFixed(4)}) | Your P/L: +${plPct.toFixed(2)}%`);
+                    reason = 'TP';
+                }
             } else if (plPct <= slThreshold) {
+                // Below initial TP - check stop loss
                 console.log(`🛑 Stop Loss triggered for ${symbol} (${plPct.toFixed(2)}%) [Threshold: ${slThreshold}%]`);
                 reason = 'SL';
             }
@@ -192,6 +203,9 @@ class AlpacaTrader {
 
                 if (closeResult) {
                     closed.push({ symbol, reason, pl: plPct });
+
+                    // Remove from position tracker
+                    positionTracker.removePosition(symbol);
 
                     // Notification with exit reason
                     const newAccount = await alpacaService.getAccount();
